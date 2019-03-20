@@ -1,4 +1,4 @@
-package com.sap.fsm.pairing;
+package com.sap.fsm.applicationconnector.pairing;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;

@@ -1,4 +1,4 @@
-package com.sap.fsm.pairing.util;
+package com.sap.fsm.applicationconnector.util;
 
 import java.io.IOException;
 import java.security.KeyPair;
