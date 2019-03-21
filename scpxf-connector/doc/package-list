@@ -1,0 +1,7 @@
+io.kyma.project.connector
+io.kyma.project.connector.connection.model
+io.kyma.project.connector.event
+io.kyma.project.connector.exception
+io.kyma.project.connector.metadata
+io.kyma.project.connector.pairing
+io.kyma.project.connector.util
