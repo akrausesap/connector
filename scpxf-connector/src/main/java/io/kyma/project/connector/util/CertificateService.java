@@ -1,4 +1,4 @@
-package com.sap.fsm.applicationconnector.util;
+package io.kyma.project.connector.util;
 
 import java.io.IOException;
 import java.security.KeyPair;
@@ -16,11 +16,18 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
 import org.bouncycastle.pkcs.jcajce.JcaPKCS10CertificationRequestBuilder;
 import org.springframework.stereotype.Service;
 
-import com.sap.fsm.exception.ApplicationConnectorException;
-
+import io.kyma.project.connector.exception.ApplicationConnectorException;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+
+/**
+* Utility Service that creates a Certificate Signing Request and returns 
+* the DER (w/o base64) encoded CSR in conjunction with the newly generated
+* key pair. The underlying libraries are from @link http://www.bouncycastle.org
+* 
+* @author Andreas Krause
+*/
 @Service
 public class CertificateService {
 	
@@ -59,7 +66,16 @@ public class CertificateService {
 	}
 	
 	
-	
+	/**
+	 * Creates a certificate signing request and Key pair that can be 
+	 * used for generating a Kyma / Extension Factory compliant CSR.
+	 * This will then be signed by the connector.
+	 * 
+	 * @param subject subject string provided by the signingRequest/info endpoint
+	 * @param algorithm algorithm string provided by the signingRequest/info endpoint
+	 * @return generated public and private key and the resulting csr as specified by the input parameters {@link CsrResult}}
+	 * @throws ApplicationConnectorException if anything fails
+	 */
 	public CsrResult createCSR(String subject, String algorithm) {
 		KeyPair keypair = generateKeyPair(algorithm);
 		try {

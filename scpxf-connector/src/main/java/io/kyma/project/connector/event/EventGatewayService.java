@@ -1,4 +1,4 @@
-package com.sap.fsm.applicationconnector.event;
+package io.kyma.project.connector.event;
 
 import java.net.URI;
 
@@ -10,22 +10,42 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
-import com.sap.fsm.applicationconnector.ConnectionModel;
-import com.sap.fsm.applicationconnector.util.ClientCertRestTemplateBuilder;
-import com.sap.fsm.exception.ApplicationConnectorException;
+import io.kyma.project.connector.connection.model.ConnectionModel;
+import io.kyma.project.connector.exception.ApplicationConnectorException;
+import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
 
+/**
+* Service that forwards events to Kyma/Extension Factory using an existing
+* Connection Model and an Event Object.
+* 
+* 
+* @author Andreas Krause
+* @see EventModel
+* @see ConnectionModel
+*/
 @Service
 public class EventGatewayService {
 	
-private ClientCertRestTemplateBuilder restTemplateBuilder;
+	private ClientCertRestTemplateBuilder restTemplateBuilder;
 
 	
+	/**
+ 	* Method used for setter injection
+ 	* @param restTemplateBuilder the builder used to acquire RestTemplate
+ 	*/
 	@Autowired
 	public void setRestTemplateBuilder(ClientCertRestTemplateBuilder restTemplateBuilder) {
 		this.restTemplateBuilder = restTemplateBuilder;
 	}
 	
 	
+	
+	/**
+	 * Publishes a given event to the connection specified in the ConnectionModel.
+	 * @param connectionModel The connection to be used for event forwarding
+	 * @param event the event to be published
+	 * @throws ApplicationConnectorException if connection fails
+	 */
 	public void writeEvent(ConnectionModel connectionModel, EventModel event) {
 		
 		RestTemplate restTemplate = 

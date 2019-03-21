@@ -1,5 +1,9 @@
-package com.sap.fsm.exception;
+package io.kyma.project.connector.exception;
 
+
+/**
+* Baseline Exception for all failures with processing API/Event Metadata.
+*/
 public class MetadataInvalidException extends RuntimeException{
 
 	private static final long serialVersionUID = -9204263913670593402L;

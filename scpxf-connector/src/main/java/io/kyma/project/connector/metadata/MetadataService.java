@@ -1,4 +1,4 @@
-package com.sap.fsm.applicationconnector.metadata;
+package io.kyma.project.connector.metadata;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,13 +20,24 @@ import org.springframework.web.client.RestTemplate;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sap.fsm.applicationconnector.ConnectionModel;
-import com.sap.fsm.applicationconnector.util.ClientCertRestTemplateBuilder;
-import com.sap.fsm.exception.ApplicationConnectorException;
-import com.sap.fsm.exception.MetadataInvalidException;
 
+import io.kyma.project.connector.connection.model.ConnectionModel;
+import io.kyma.project.connector.exception.ApplicationConnectorException;
+import io.kyma.project.connector.exception.MetadataInvalidException;
+import io.kyma.project.connector.exception.RestTemplateCustomizerException;
+import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
 import lombok.Data;
 
+
+/**
+* Service that registers metadata to Kyma/Extension Factory using an existing
+* Connection Model and a reference to a file system. Furthermore Authentication Information
+* required for API call-back can be passed.
+* 
+* 
+* @author Andreas Krause
+* @see ConnectionModel
+*/
 @Service
 public class MetadataService {
 	
@@ -34,7 +45,11 @@ public class MetadataService {
 	
 	private ClientCertRestTemplateBuilder restTemplateBuilder;
 
-	
+	/**
+	 * Sets the {@link ClientCertRestTemplateBuilder} to be used by this object
+	 * 
+	 * @param restTemplateBuilder {@link ClientCertRestTemplateBuilder} to be used by this Object 
+	 */		
 	@Autowired
 	public void setRestTemplateBuilder(ClientCertRestTemplateBuilder restTemplateBuilder) {
 		this.restTemplateBuilder = restTemplateBuilder;
@@ -70,6 +85,7 @@ public class MetadataService {
 		
 	}
 	
+	@SuppressWarnings("unchecked")
 	private Map<String, Object> getMetadata(File metaDataFile) {
 		
 		try {
@@ -85,8 +101,36 @@ public class MetadataService {
 
 	}
 	
+	private Map<String, Object> addAuthenticationToMetadata(Map<String, Object> metadata, 
+			MetadataAuthenticationInformation authentication) {
+		
+		//no api contained, hence nothing to do
+		if (!metadata.containsKey("api")) {
+			return metadata;
+		}
+		
+		
+		@SuppressWarnings("unchecked")
+		Map<String, Object> api = (Map<String, Object>) metadata.get("api");
+		
+		api.put("credentials", authentication.getAuthenticationInfo());
+		
+		return metadata;
+		
+	}
 	
-	public void registerMetadata(ConnectionModel connectionModel, File metaDataFile) {
+	/**
+	 * Registers metadata to the Kyma / Extension Factory Application Registry using a pointer
+	 * to a file with the appropriate JSON format
+	 * 
+	 * @param connectionModel model containing all details for the connection to Kyma/Extension Factory
+	 * @param authentication model containing authentication data, can be null 
+	 * @throws ApplicationConnectorException if anything fails
+	 * @throws RestTemplateCustomizerException if anything fails with acquiring the {@link RestTemplate}
+	 * @throws MetadataInvalidException if Metadata is flawed (no syntax check though)
+	 */
+	public void registerMetadata(ConnectionModel connectionModel, File metaDataFile,
+			MetadataAuthenticationInformation authentication) {
 		
 		RestTemplate restTemplate = 
 				restTemplateBuilder.applicationConnectorRestTemplate(connectionModel.getSslKey(),
@@ -95,6 +139,10 @@ public class MetadataService {
 		Map<String, MetadataResponse> currentMetadata = getMetadata(restTemplate, connectionModel.getMetadataUrl());
 
 		Map<String, Object> metadata = getMetadata(metaDataFile);
+		
+		if(authentication != null) {
+			metadata = addAuthenticationToMetadata(metadata, authentication);
+		}
 
 		try {
 			if (metadata.containsKey("identifier")) {
@@ -139,5 +187,6 @@ public class MetadataService {
 		private String identifier;
 	}
 	
+	@SuppressWarnings("serial")
 	private static class MetadataResponseList extends ArrayList<MetadataResponse> {}
 }

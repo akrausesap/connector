@@ -1,4 +1,4 @@
-package com.sap.fsm.applicationconnector.pairing;
+package io.kyma.project.connector.pairing;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -25,18 +25,29 @@ import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.sap.fsm.applicationconnector.ConnectionModel;
-import com.sap.fsm.applicationconnector.util.CertificateService;
-import com.sap.fsm.applicationconnector.util.ClientCertRestTemplateBuilder;
-import com.sap.fsm.applicationconnector.util.CertificateService.CsrResult;
-import com.sap.fsm.exception.ApplicationConnectorException;
 
+import io.kyma.project.connector.connection.model.ConnectionModel;
+import io.kyma.project.connector.exception.ApplicationConnectorException;
+import io.kyma.project.connector.exception.RestTemplateCustomizerException;
+import io.kyma.project.connector.util.CertificateService;
+import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
+import io.kyma.project.connector.util.CertificateService.CsrResult;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
 
+/**
+* Service that "pairs" the client with Kyma / Extension Factory. It supports the following steps:
+* * Initial Connect
+* * Certificate Renewal
+* * Get Info (Needs to be periodically invoked)
+* 
+* All methods return a fresh Connection Model.
+* 
+* @author Andreas Krause
+* @see ConnectionModel
+*/
 @Service
-//@RequestScope
 public class PairingService {
 	
 
@@ -47,18 +58,31 @@ public class PairingService {
 	
 	private ClientCertRestTemplateBuilder restTemplateBuilder;
 
-	
+	/**
+	 * Sets the {@link ClientCertRestTemplateBuilder} to be used by this object
+	 * 
+	 * @param restTemplateBuilder {@link ClientCertRestTemplateBuilder} to be used by this Object 
+	 */	
 	@Autowired
-	public void setRestTemplateBuilder(ClientCertRestTemplateBuilder restTemplateBuilder) {
+	public void setClientCertRestTemplateBuilder(ClientCertRestTemplateBuilder restTemplateBuilder) {
 		this.restTemplateBuilder = restTemplateBuilder;
 	}
 
-
+	/**
+	 * Sets the {@link CertificateService} to be used by this object
+	 * 
+	 * @param certService {@link CertificateService} to be used by this Object 
+	 */	
 	@Autowired
 	public void setCertService(CertificateService certService) {
 		this.certService = certService;
 	}
-	
+
+	/**
+	 * Sets the {@link RestTemplate} to be used by this object for the initila pairing step (no 2-way-ssl)
+	 * 
+	 * @param pairingTemplate {@link RestTemplate} to be used by this Object 
+	 */
 	@Autowired
 	@Qualifier("PairingTemplate")
 	public void setPairingTemplate(RestTemplate pairingTemplate) {
@@ -149,7 +173,16 @@ public class PairingService {
 	}
 	
 	
-
+	/**
+	 * Refreshes the current certificate and private key used to communicate with Kyma / Extension Factory 
+	 * and returns a new object {@link ConnectionModel} with refreshed key store and password.
+	 * 
+	 * @param currentConnectionModel model containing all details for the current connection 
+	 * @param newKeyStorePassword password to be used for the refreshed keystore
+	 * @return {@link ConnectionModel} that contains updated connection details with refreshed keystore
+	 * @throws ApplicationConnectorException if anything fails
+	 * @throws RestTemplateCustomizerException if anything fails with acquiring the {@link RestTemplate}
+	 */
 	public ConnectionModel renewCertificate(ConnectionModel currentConnectionModel,
 			char[] newKeyStorePassword) {
 		
@@ -175,6 +208,15 @@ public class PairingService {
 		return result;
 	}
 	
+	/**
+	 * Refreshes the current connection data to Kyma / Extension Factory 
+	 * and returns an object {@link ConnectionModel} with all needed details.
+	 * 
+	 * @param currentConnectionModel model containing all details for the current connection 
+	 * @return {@link ConnectionModel} that contains updated connection details
+	 * @throws ApplicationConnectorException if anything fails
+	 * @throws RestTemplateCustomizerException if anything fails with acquiring the {@link RestTemplate}
+	 */
 	public ConnectionModel getInfo(ConnectionModel currentConnectionModel) {
 		return getInfo(currentConnectionModel.getInfoUrl(), 
 				currentConnectionModel.getKeystorePass(), 
@@ -186,7 +228,8 @@ public class PairingService {
 	private ConnectionModel getInfo(URI infoUrl, char[] keystorePassword, KeyStore keyStore,
 			String certificateAlgorithm, String certificateSubject) {
 		
-		RestTemplate restTemplate = restTemplateBuilder.applicationConnectorRestTemplate(keyStore, keystorePassword);
+		RestTemplate restTemplate = 
+				restTemplateBuilder.applicationConnectorRestTemplate(keyStore, keystorePassword);
 		try {
 			ResponseEntity<InfoResponse> response = restTemplate.getForEntity(infoUrl, InfoResponse.class);
 
@@ -216,6 +259,15 @@ public class PairingService {
 		}
 	}
 	
+	/**
+	 * Establishes the initial connection to Kyma / Extension Factory 
+	 * and returns an object {@link ConnectionModel} with all needed details.
+	 * 
+	 * @param keystorePassword password to be provided for the keystore
+	 * @param connectUri with valid one time token from Connector Services
+	 * @return {@link ConnectionModel} that contains all info related to the connection
+	 * @throws ApplicationConnectorException if anything fails
+	 */
 	public ConnectionModel executeInitialPairing(URI connectUri, char[] keystorePassword) {
 		
 		ConnectInfo connectInfo = getConnectInfo(connectUri);
