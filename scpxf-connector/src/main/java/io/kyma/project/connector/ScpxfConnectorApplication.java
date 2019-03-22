@@ -87,7 +87,7 @@ public class ScpxfConnectorApplication implements CommandLineRunner {
 
 		
 			eventGatewayService.writeEvent(newModel, new EventModel("person.created", "v1", df.format(new Date()),
-					Collections.singletonMap("personid",				"testperson")));
+					Collections.singletonMap("personid", "testperson")));
 			
 			System.out.println("\nSucessfully sent person.created event for testperson");
 			

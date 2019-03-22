@@ -166,7 +166,7 @@ public class MetadataService {
 					ResponseEntity<String> response = restTemplate.postForEntity(connectionModel.getMetadataUrl(),
 							metadata, String.class);
 
-					if (response.getStatusCode() != HttpStatus.CREATED) {
+					if (response.getStatusCode() != HttpStatus.OK) {
 						throw new ApplicationConnectorException(String.format("Error Response Received, code: %d (%s)",
 								response.getStatusCode().value(), response.getStatusCode().getReasonPhrase()));
 					}

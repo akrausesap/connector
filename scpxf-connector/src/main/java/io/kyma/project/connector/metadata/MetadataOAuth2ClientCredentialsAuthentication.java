@@ -28,8 +28,6 @@ public class MetadataOAuth2ClientCredentialsAuthentication implements MetadataAu
 	@Override
 	public Map<String, Object> getAuthenticationInfo() {
 		
-		
-		
 		Map<String, Object> oauth = new HashMap<String, Object>();
 		oauth.put("url", url.toString());
 		oauth.put("clientId", clientId);
