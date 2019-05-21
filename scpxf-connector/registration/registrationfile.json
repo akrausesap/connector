@@ -2,7 +2,7 @@
   "provider": "SAP Demo",
   "name": "Person API",
   "description": "Local Service for managing Persons",
-  "identifier":"my_metadata_id",
+  "identifier":"my_metadata_id2",
   "api": {
     "targetUrl": "https://personservice.demo-ak2.cluster.extend.sap.cx/",
     "spec":     	

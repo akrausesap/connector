@@ -103,7 +103,7 @@ public class ClientCertRestTemplateBuilder {
 				SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(sslContext);
 
 				HttpClient client = HttpClients.custom().setSSLSocketFactory(socketFactory).build();
-
+				
 				result = restTemplateBuilder
 						.requestFactory(() -> new HttpComponentsClientHttpRequestFactory(client)).build();
 				

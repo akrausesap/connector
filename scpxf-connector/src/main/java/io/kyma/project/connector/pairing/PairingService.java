@@ -14,7 +14,6 @@ import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
-import java.util.Collections;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -30,8 +29,8 @@ import io.kyma.project.connector.connection.model.ConnectionModel;
 import io.kyma.project.connector.exception.ApplicationConnectorException;
 import io.kyma.project.connector.exception.RestTemplateCustomizerException;
 import io.kyma.project.connector.util.CertificateService;
-import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
 import io.kyma.project.connector.util.CertificateService.CsrResult;
+import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -245,13 +244,14 @@ public class PairingService {
 			result.setMetadataUrl(response.getBody().getUrls().getMetadataUrl());
 			result.setRenewCertUrl(response.getBody().getUrls().getRenewCertUrl());
 			result.setRevocationCertUrl(response.getBody().getUrls().getRevocationCertUrl());
+			result.setEventsInfoUrl(response.getBody().getUrls().getEventsInfoUrl());
 			result.setKeystorePass(keystorePassword);
 			result.setSslKey(keyStore);
 			result.setCertificateAlgorithm(certificateAlgorithm);
 			result.setCertificateSubject(certificateSubject);
 
 			if (response.getBody().getUrls().getEventsUrl() != null)
-				result.setEventsURLs(Collections.singletonList(response.getBody().getUrls().getEventsUrl()));
+				result.setEventsURL(response.getBody().getUrls().getEventsUrl());
 
 			return result;
 		} catch (RestClientException e) {
@@ -351,6 +351,7 @@ public class PairingService {
 		private URI metadataUrl;
 		private URI renewCertUrl;
 		private URI revocationCertUrl;
+		private URI eventsInfoUrl;
 		
 	}
 

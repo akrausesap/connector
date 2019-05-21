@@ -1,8 +1,11 @@
 package io.kyma.project.connector.event;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
@@ -11,20 +14,19 @@ import org.springframework.web.client.RestTemplate;
 import io.kyma.project.connector.connection.model.ConnectionModel;
 import io.kyma.project.connector.exception.ApplicationConnectorException;
 import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
+import lombok.Data;
+
 
 /**
-* Service that "pairs" the client with Kyma / Extension Factory. It supports the following steps:
-* * Initial Connect
-* * Certificate Renewal
-* * Get Info (Needs to be periodically invoked)
-* 
-* All methods return a fresh Connection Model.
+* Service that is used to determine active Event Subscriptions on a particular Kyma
+* /Extension Factory instance
 * 
 * @author Andreas Krause
-* @see ConnectionModel
+* @see EventSubscriptionModel
 */
 @Service
-public class EventGatewayService {
+public class EventSubscriptionService {
+	
 	
 	private ClientCertRestTemplateBuilder restTemplateBuilder;
 
@@ -38,34 +40,51 @@ public class EventGatewayService {
 		this.restTemplateBuilder = restTemplateBuilder;
 	}
 	
-	
-	
 	/**
-	 * Publishes a given event to the connection specified in the ConnectionModel.
-	 * @param connectionModel The connection to be used for event forwarding
-	 * @param event the event to be published
-	 * @throws ApplicationConnectorException if connection fails
-	 */
-	public void writeEvent(ConnectionModel connectionModel, EventModel event) {
+ 	* Method that retrieves active event subscriptions
+ 	* @param connectionModel model containing all details for the current connection 
+ 	*/
+	public EventSubscriptionModel getEventSubscriptions(ConnectionModel connectionModel) {
 		
 		RestTemplate restTemplate = 
 				restTemplateBuilder.applicationConnectorRestTemplate(
 						connectionModel.getSslKey(), 
 						connectionModel.getKeystorePass());
-	
-
+		
 		try {
-			ResponseEntity<String> response = restTemplate.exchange(connectionModel.getEventsURL(), HttpMethod.POST,
-					new HttpEntity<EventModel>(event), String.class);
-
-			if (!response.getStatusCode().is2xxSuccessful()) {
+			ResponseEntity<EventSubscriptionResponse> response = 
+					restTemplate.getForEntity(connectionModel.getEventsInfoUrl(), 
+							EventSubscriptionResponse.class);
+			if (response.getStatusCode() != HttpStatus.OK) {
 				throw new ApplicationConnectorException(String.format("Error Response Received, code: %d (%s)",
 						response.getStatusCode().value(), response.getStatusCode().getReasonPhrase()));
 			}
+			
+			List<EventSubscriptionModel.Event> subscriptions = 
+					response.getBody().getEventsInfo().stream()
+						.map((e) -> new EventSubscriptionModel.Event(e.getName(), e.getVersion()))
+						.collect(Collectors.toList());
+			
+			return new EventSubscriptionModel(subscriptions);
+			
 		} catch (RestClientException e) {
 			throw new ApplicationConnectorException(e.getMessage(), e);
 		}
-		
 	}
 	
+	@Data
+	private static class EventSubscriptionResponse {
+		
+		private List<EventSubscription> eventsInfo = new ArrayList<EventSubscription>();
+		
+	}
+	@Data
+	private static class EventSubscription {
+		
+		private String name;
+		private String version;
+		
+	}
+
+
 }

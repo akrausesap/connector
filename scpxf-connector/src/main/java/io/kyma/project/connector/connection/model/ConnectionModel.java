@@ -6,10 +6,8 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Enumeration;
-import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
@@ -32,6 +30,8 @@ public class ConnectionModel {
 	private URI renewCertUrl;
 	private URI revocationCertUrl;
 	private URI infoUrl;
+	private URI eventsInfoUrl;
+	private URI eventsURL;
 	
 	private String certificateSubject;
 	private String certificateAlgorithm;
@@ -39,7 +39,7 @@ public class ConnectionModel {
 	
 	private KeyStore sslKey;
 	private char[] keystorePass;
-	private List<URI> eventsURLs = new ArrayList<URI>();
+	
 	
 	/**
 	 * Returns the expiry date of the application certificate contained in the keystore 

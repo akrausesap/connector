@@ -15,6 +15,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import io.kyma.project.connector.connection.model.ConnectionModel;
 import io.kyma.project.connector.event.EventGatewayService;
 import io.kyma.project.connector.event.EventModel;
+import io.kyma.project.connector.event.EventSubscriptionModel;
+import io.kyma.project.connector.event.EventSubscriptionService;
 import io.kyma.project.connector.metadata.MetadataBasicAuthentication;
 import io.kyma.project.connector.metadata.MetadataOAuth2ClientCredentialsAuthentication;
 import io.kyma.project.connector.metadata.MetadataService;
@@ -31,6 +33,9 @@ public class ScpxfConnectorApplication implements CommandLineRunner {
 	
 	@Autowired
 	private EventGatewayService eventGatewayService;
+	
+	@Autowired
+	private EventSubscriptionService eventSubscriptionService;
 	
 	public static void main(String[] args) {
 		SpringApplication.run(ScpxfConnectorApplication.class, args);
@@ -84,8 +89,16 @@ public class ScpxfConnectorApplication implements CommandLineRunner {
 					new MetadataOAuth2ClientCredentialsAuthentication(new URI("https://test.com"), "client", "secret"));
 			
 			System.out.println("\nSucessfully registered metadata from registration/registrationfile.json with OAuth2 client credentials");
-
-		
+			
+			System.out.println("\nReading active Event Subscriptions... This needs to be done periodically...");
+			EventSubscriptionModel eventSubscriptionModel = eventSubscriptionService.getEventSubscriptions(newModel);
+			
+			if (eventSubscriptionModel.isEventActive(new EventSubscriptionModel.Event("person.created", "v1"))) {
+				System.out.println("person.created-v1 has subscriptions and should be sent");
+			} else  {
+				System.out.println("person.created-v1 has no subscriptions and should not be sent");
+			}
+			
 			eventGatewayService.writeEvent(newModel, new EventModel("person.created", "v1", df.format(new Date()),
 					Collections.singletonMap("personid", "testperson")));
 			
