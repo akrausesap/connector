@@ -129,8 +129,14 @@ public class PairingService {
 		 while (m.find()) {
 			 result.add(m.group());
 		 }
+		 
+		 if (result.size() > 0) {
+			 return result;
+		 } else {
+			 throw new ApplicationConnectorException("No certificates contained in parsed string:\n " + certsString);
+		 }
 		
-		 return result;
+		 
 		
 	}
 	
