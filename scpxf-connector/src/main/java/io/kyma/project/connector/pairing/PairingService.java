@@ -11,9 +11,13 @@ import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -111,6 +115,26 @@ public class PairingService {
 		}
 	}
 	
+	private List<String> matchCertificates(String certsString) {
+		
+		Pattern pattern = Pattern.compile(
+	            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
+	                    "([a-z0-9+/=\\r\\n]+)" +                    // Base64 text
+	                    "-+END\\s+.*CERTIFICATE[^-]*-+",            // Footer
+	            Pattern.CASE_INSENSITIVE);
+		
+		 Matcher m = pattern.matcher(certsString);
+		 
+		 List<String> result = new ArrayList<String>();
+		 
+		 while (m.find()) {
+			 result.add(m.group());
+		 }
+		
+		 return result;
+		
+	}
+	
 	private KeyStore getCertificateInternal(RestTemplate restTemplate, char[] keystorePassword, URI csrUrl, 
 			byte[] csr, KeyPair keyPair) {
 		
@@ -130,22 +154,18 @@ public class PairingService {
 			
 			KeyStore ks = KeyStore.getInstance("JKS");
 			
+			List<String> certs = matchCertificates(new String(
+					 		base64Decoder.decode(response.getBody().getCrt())));
 			
-			Certificate[] certificateChain = new X509Certificate[2];
+			Certificate[] certificateChain = new X509Certificate[certs.size()];
 			
 			CertificateFactory cf = CertificateFactory.getInstance("X.509");
+				
+			for (int counter = 0; counter < certs.size(); counter++) {
+				certificateChain[counter] = cf.generateCertificate(
+												new ByteArrayInputStream(certs.get(counter).getBytes()));
+			}
 			
-			certificateChain[0] = 
-					cf.generateCertificate(
-						new ByteArrayInputStream(
-								base64Decoder.decode(
-												response.getBody().getClientCrt())));
-			
-			certificateChain[1] = 
-					cf.generateCertificate(
-						new ByteArrayInputStream(
-								base64Decoder.decode(
-												response.getBody().getCaCrt())));
 
 			ks.load(null, keystorePassword);
 			
