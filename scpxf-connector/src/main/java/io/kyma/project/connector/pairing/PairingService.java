@@ -53,6 +53,11 @@ import lombok.Data;
 @Service
 public class PairingService {
 	
+	private final Pattern CERT_PATTERN = Pattern.compile(
+            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
+                    "([a-z0-9+/=\\r\\n]+)" +                    // Base64 text
+                    "-+END\\s+.*CERTIFICATE[^-]*-+",            // Footer
+            Pattern.CASE_INSENSITIVE);
 
 	
 	private RestTemplate pairingTemplate;
@@ -117,13 +122,7 @@ public class PairingService {
 	
 	private List<String> matchCertificates(String certsString) {
 		
-		Pattern pattern = Pattern.compile(
-	            "-+BEGIN\\s+.*CERTIFICATE[^-]*-+(?:\\s|\\r|\\n)+" + // Header
-	                    "([a-z0-9+/=\\r\\n]+)" +                    // Base64 text
-	                    "-+END\\s+.*CERTIFICATE[^-]*-+",            // Footer
-	            Pattern.CASE_INSENSITIVE);
-		
-		 Matcher m = pattern.matcher(certsString);
+		 Matcher m = CERT_PATTERN.matcher(certsString);
 		 
 		 List<String> result = new ArrayList<String>();
 		 
