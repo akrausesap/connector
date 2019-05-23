@@ -13,7 +13,6 @@ import java.security.cert.CertificateFactory;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
-import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -35,8 +34,6 @@ import io.kyma.project.connector.util.CertificateService.CsrResult;
 import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-
-import static java.util.stream.Collectors.toCollection;
 
 
 /**
