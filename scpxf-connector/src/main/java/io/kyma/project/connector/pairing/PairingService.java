@@ -10,10 +10,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
-import java.security.cert.X509Certificate;
 import java.util.Base64;
 import java.util.Base64.Decoder;
 import java.util.Base64.Encoder;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,6 +35,8 @@ import io.kyma.project.connector.util.CertificateService.CsrResult;
 import io.kyma.project.connector.util.ClientCertRestTemplateBuilder;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+
+import static java.util.stream.Collectors.toCollection;
 
 
 /**
@@ -129,30 +133,20 @@ public class PairingService {
 			}
 			
 			KeyStore ks = KeyStore.getInstance("JKS");
-			
-			
-			Certificate[] certificateChain = new X509Certificate[2];
-			
+
 			CertificateFactory cf = CertificateFactory.getInstance("X.509");
-			
-			certificateChain[0] = 
-					cf.generateCertificate(
-						new ByteArrayInputStream(
-								base64Decoder.decode(
-												response.getBody().getClientCrt())));
-			
-			certificateChain[1] = 
-					cf.generateCertificate(
-						new ByteArrayInputStream(
-								base64Decoder.decode(
-												response.getBody().getCaCrt())));
+
+			List<Certificate> certificateChain = cf.generateCertificates(
+					new ByteArrayInputStream(
+							base64Decoder.decode(
+									response.getBody().getCrt()))).stream().collect(Collectors.toList());
 
 			ks.load(null, keystorePassword);
 			
 			ks.setKeyEntry("extension-factory-key", 
 					keyPair.getPrivate(), 
 					keystorePassword, 
-					certificateChain);
+					certificateChain.toArray(new Certificate[certificateChain.size()]));
 			
 			return ks;
 			
